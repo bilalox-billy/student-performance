@@ -41,9 +41,9 @@ class DataTransformation:
             ])
 
             cat_pipeline = Pipeline(steps=[
-                 ('imputer', SimpleImputer(strategy='most_frequent')), # fill missing values with most frequent value
-                 ('one_hot_encoder', OneHotEncoder()), # convert categorical data to numerical data
-                 ('scaler', StandardScaler(with_mean=False)) # standardize the data
+                ('imputer', SimpleImputer(strategy='most_frequent')), # fill missing values with most frequent value
+                ('one_hot_encoder', OneHotEncoder()), # convert categorical data to numerical data
+                ('scaler', StandardScaler(with_mean=False)) # standardize the data
             ])
 
             logging.info(f"Categorical columns: {categorical_columns}")
@@ -70,7 +70,7 @@ class DataTransformation:
             logging.info("Read train and test data completed")
 
             logging.info("Obtaining preprocessing object")
-            preprocessing_obj = self.get_transformer_object()
+            preprocessing_obj = self.get_data_transformer_object()
 
             target_column_name = "math_score"
 
