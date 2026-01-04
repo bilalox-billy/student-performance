@@ -27,7 +27,7 @@ class DataIngestion:
         try:
             df = pd.read_csv(data_path) # you can read the data from any source like mongoDB
             logging.info('Read dataset as dataFrame')
-            os.makedirs(os.path.dirname(self.ingestion_config.train_data_path), exist_ok=True) # Create directory
+            os.makedirs(os.path.dirname(self.ingestion_config.train_data_path), exist_ok=True) # Create directory called artifacts
             df.to_csv(self.ingestion_config.raw_data_path, index=False, header=True)
             logging.info("Train test split initiated")
             train_set, test_set = train_test_split(df, test_size=0.2, random_state=42)
