@@ -1,0 +1,162 @@
+# Model Training Configuration
+# This file contains hyperparameters for all models used in the student performance prediction project
+
+model_trainer:
+  trained_model_file_path: artifacts/model.pkl
+  minimum_r2_score: 0.6  # Minimum acceptable R2 score for model selection
+
+models:
+  Decision Tree:
+    enabled: false
+    params:
+      criterion:
+        - squared_error
+        - friedman_mse
+        - absolute_error
+        - poisson
+      # splitter:
+      #   - best
+      #   - random
+      # max_features:
+      #   - sqrt
+      #   - log2
+
+  Random Forest:
+    enabled: false
+    params:
+      n_estimators:
+        - 8
+        - 16
+        - 32
+        - 64
+        - 128
+        - 256
+      # criterion:
+      #   - squared_error
+      #   - friedman_mse
+      #   - absolute_error
+      #   - poisson
+      # max_features:
+      #   - sqrt
+      #   - log2
+
+  Gradient Boosting:
+    enabled: false
+    params:
+      learning_rate:
+        - 0.001
+        - 0.01
+        - 0.05
+        - 0.1
+      subsample:
+        - 0.6
+        - 0.7
+        - 0.75
+        - 0.8
+        - 0.85
+        - 0.9
+      n_estimators:
+        - 8
+        - 16
+        - 32
+        - 64
+        - 128
+        - 256
+      # loss:
+      #   - squared_error
+      #   - huber
+      #   - absolute_error
+      #   - quantile
+      # criterion:
+      #   - squared_error
+      #   - friedman_mse
+      # max_features:
+      #   - auto
+      #   - sqrt
+      #   - log2
+
+  Linear Regression:
+    enabled: false
+    params: {}
+
+  XGBRegressor:
+    enabled: true
+    params:
+      learning_rate:
+        - 0.001
+        - 0.01
+        - 0.05
+        - 0.1
+      n_estimators:
+        - 8
+        - 16
+        - 32
+        - 64
+        - 128
+        - 256
+
+  CatBoosting Regressor:
+    enabled: true
+    params:
+      depth:
+        - 6
+        - 8
+        - 10
+      learning_rate:
+        - 0.01
+        - 0.05
+        - 0.1
+      iterations:
+        - 30
+        - 50
+        - 100
+
+  AdaBoost Regressor:
+    enabled: true
+    params:
+      learning_rate:
+        - 0.001
+        - 0.01
+        - 0.1
+        - 0.5
+      n_estimators:
+        - 8
+        - 16
+        - 32
+        - 64
+        - 128
+        - 256
+      # loss:
+      #   - linear
+      #   - square
+      #   - exponential
+
+# Grid Search Configuration
+grid_search:
+  cv: 3  # Number of cross-validation folds
+  scoring: r2  # Scoring metric
+  n_jobs: -1  # Number of parallel jobs (-1 means use all processors)
+  verbose: 1  # Verbosity level
+
+# Data Configuration
+data_ingestion:
+  raw_data_path: artifacts/data.csv
+  train_data_path: artifacts/train.csv
+  test_data_path: artifacts/test.csv
+  test_size: 0.2
+  random_state: 42
+
+# Data Transformation Configuration
+data_transformation:
+  preprocessor_path: artifacts/preprocessor.pkl
+  numerical_columns:
+    - writing_score
+    - reading_score
+  categorical_columns:
+    - gender
+    - race_ethnicity
+    - parental_level_of_education
+    - lunch
+    - test_preparation_course
+  target_column: math_score
+

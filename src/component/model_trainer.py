@@ -17,7 +17,7 @@ from xgboost import XGBRegressor
 from src.exception import CustomException
 from src.logger import logging
 
-from src.utils import save_object, evaluate_models
+from src.utils import save_object, evaluate_models, read_yaml
 
 
 @dataclass
@@ -27,6 +27,8 @@ class ModelTrainerConfig:
 class ModelTrainer:
     def __init__(self):
         self.model_trainer_config = ModelTrainerConfig()
+        # Load configuration from YAML
+        self.config = read_yaml('params.yaml')
 
     
     def initiate_model_trainer(self, train_array, test_array):
@@ -39,76 +41,69 @@ class ModelTrainer:
                 test_array[:, -1]
             )
 
-            models = {
-                "Random Forest": RandomForestRegressor(),
-                "Decision Tree": DecisionTreeRegressor(),
-                "Gradient Boosting": GradientBoostingRegressor(),
-                "Linear Regression": LinearRegression(),
-                "XGBRegressor": XGBRegressor(),
-                "CatBoosting Regressor": CatBoostRegressor(verbose=False),
-                "AdaBoost Regressor": AdaBoostRegressor(),
-            }
-
-
-            params = {
-                "Decision Tree": {
-                    'criterion':['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
-                    # 'splitter':['best','random'],
-                    # 'max_features':['sqrt','log2'],
-                },
-                "Random Forest":{
-                    # 'criterion':['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
-                 
-                    # 'max_features':['sqrt','log2',None],
-                    'n_estimators': [8,16,32,64,128,256]
-                },
-                "Gradient Boosting":{
-                    # 'loss':['squared_error', 'huber', 'absolute_error', 'quantile'],
-                    'learning_rate':[.1,.01,.05,.001],
-                    'subsample':[0.6,0.7,0.75,0.8,0.85,0.9],
-                    # 'criterion':['squared_error', 'friedman_mse'],
-                    # 'max_features':['auto','sqrt','log2'],
-                    'n_estimators': [8,16,32,64,128,256]
-                },
-                "Linear Regression":{},
-                "XGBRegressor":{
-                    'learning_rate':[.1,.01,.05,.001],
-                    'n_estimators': [8,16,32,64,128,256]
-                },
-                "CatBoosting Regressor":{
-                    'depth': [6,8,10],
-                    'learning_rate': [0.01, 0.05, 0.1],
-                    'iterations': [30, 50, 100]
-                },
-                "AdaBoost Regressor":{
-                    'learning_rate':[.1,.01,0.5,.001],
-                    # 'loss':['linear','square','exponential'],
-                    'n_estimators': [8,16,32,64,128,256]
-                }
-
-            }
-
-            model_report:dict = evaluate_models(X_train, y_train, X_test, y_test, models, params)
+            # Load model configurations from YAML
+            logging.info("Loading model configurations from params.yaml")
+            models_config = self.config['models']
+            logging.info(f"Loading model configurations from params.yaml: {models_config}")
+            
+            # Initialize models based on configuration
+            models = {}
+            params = {}
+            
+            for model_name, model_config in models_config.items():
+                if model_config.get('enabled', True):
+                    # Initialize model instances
+                    if model_name == "Random Forest":
+                        models[model_name] = RandomForestRegressor()
+                    elif model_name == "Decision Tree":
+                        models[model_name] = DecisionTreeRegressor()
+                    elif model_name == "Gradient Boosting":
+                        models[model_name] = GradientBoostingRegressor()
+                    elif model_name == "Linear Regression":
+                        models[model_name] = LinearRegression()
+                    elif model_name == "XGBRegressor":
+                        models[model_name] = XGBRegressor()
+                    elif model_name == "CatBoosting Regressor":
+                        models[model_name] = CatBoostRegressor(verbose=False)
+                    elif model_name == "AdaBoost Regressor":
+                        models[model_name] = AdaBoostRegressor()
+                    
+                    # Get hyperparameters from config
+                    params[model_name] = model_config.get('params', {})
+            
+            logging.info(f"Enabled models: {list(models.keys())}")
+            
+            # Get grid search configuration
+            grid_search_config = self.config.get('grid_search', {})
+            
+            # Evaluate models
+            model_report: dict = evaluate_models(
+                X_train, y_train, X_test, y_test, 
+                models, params, grid_search_config
+            )
             logging.info(f"Models trained: {model_report}")
 
-           ## To get best model score from dict
-
+            ## To get best model score from dict
             test_scores = {model_name: scores['test_score'] for model_name, scores in model_report.items()}
             best_model_score = max(test_scores.values())
-           ## To get best model name from dict
+            
+            ## To get best model name from dict
             best_model_name = [model_name for model_name, score in test_scores.items() if score == best_model_score][0]
-           
             best_model = models[best_model_name]
+            
+            # Get minimum acceptable R2 score from config
+            min_r2_score = self.config.get('model_trainer', {}).get('minimum_r2_score', 0.6)
 
-            if best_model_score < 0.6:
-             raise CustomException("No best model found")
+            if best_model_score < min_r2_score:
+                raise CustomException(f"No best model found with R2 score >= {min_r2_score}")
 
-            logging.info(f"Best found model on both training and test dataset")
+            logging.info(f"Best model found: {best_model_name} with R2 score: {best_model_score}")
+            logging.info(f"Best parameters: {model_report[best_model_name].get('best_params', {})}")
 
             save_object(
-            file_path=self.model_trainer_config.trained_model_file_path,
-            obj=best_model
-           )
+                file_path=self.model_trainer_config.trained_model_file_path,
+                obj=best_model
+            )
 
             predicted = best_model.predict(X_test)
             r2_square = r2_score(y_test, predicted)
