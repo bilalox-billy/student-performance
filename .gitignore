@@ -32,6 +32,9 @@ MANIFEST
 *.manifest
 *.spec
 
+data/
+logs/
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -49,6 +52,7 @@ coverage.xml
 *.py.cover
 .hypothesis/
 .pytest_cache/
+.python-version
 cover/
 
 # Translations
